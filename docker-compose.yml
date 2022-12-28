@@ -1,0 +1,50 @@
+version: "3.7"
+
+networks:
+  mastodon-external:
+    name: mastodon-external
+  mastodon-network:
+
+services:
+  mastodon:
+    image: lscr.io/linuxserver/mastodon:develop
+    container_name: mastodon
+    restart: unless-stopped
+    env_file: ./.env
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=America/New_York
+      - S3_ENABLED=false
+      - WEB_DOMAIN=mastodon.anonymousland.org
+    volumes:
+      - ./config:/config
+    networks:
+      - mastodon-external
+      - mastodon-network
+
+  mastodon-redis:
+    image: redis:alpine
+    container_name: mastodon-redis
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    volumes:
+      - ./redis:/data
+    networks:
+      - mastodon-network
+
+  mastodon-db:
+    image: postgres:15-alpine
+    container_name: mastodon-db
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    volumes:
+      - ./db:/var/lib/postgresql-mastodon/data
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_DB=db
+      - POSTGRES_PASSWORD=password
+    networks:
+      - mastodon-network
